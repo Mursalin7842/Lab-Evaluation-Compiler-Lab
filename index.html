@@ -1,0 +1,736 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flex & Bison: The Ultimate Guide</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- PrismJS for Syntax Highlighting -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet" />
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/line-numbers/prism-line-numbers.min.css" rel="stylesheet" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-c.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-bash.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/line-numbers/prism-line-numbers.min.js"></script>
+    
+    <!-- Professional Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --sidebar-width: 280px;
+            --primary-color: #2563eb;
+            --text-color: #334155;
+            --bg-color: #ffffff;
+            --code-bg: #1e293b;
+        }
+
+        html { scroll-behavior: smooth; }
+        body { 
+            font-family: 'Inter', sans-serif; 
+            background-color: #f8fafc; 
+            color: var(--text-color); 
+            overflow-x: hidden; 
+        }
+        
+        code, pre { font-family: 'JetBrains Mono', monospace; }
+
+        /* --- Sidebar Styling --- */
+        .sidebar {
+            width: var(--sidebar-width);
+            height: 100vh;
+            position: fixed;
+            top: 0;
+            left: 0;
+            background: #fff;
+            border-right: 1px solid #e2e8f0;
+            overflow-y: auto;
+            z-index: 50;
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 4px 0 24px rgba(0,0,0,0.02);
+        }
+
+        /* Sidebar States */
+        .sidebar.closed { transform: translateX(calc(var(--sidebar-width) * -1)); }
+        
+        .nav-header {
+            position: sticky;
+            top: 0;
+            background: rgba(255,255,255,0.95);
+            backdrop-filter: blur(8px);
+            padding: 1.5rem;
+            border-bottom: 1px solid #f1f5f9;
+            z-index: 10;
+        }
+
+        .nav-group-title {
+            padding: 1.5rem 1.5rem 0.5rem;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: #94a3b8;
+        }
+
+        .nav-link {
+            display: block;
+            padding: 0.6rem 1.5rem;
+            color: #64748b;
+            text-decoration: none;
+            font-size: 0.9rem;
+            border-left: 3px solid transparent;
+            transition: all 0.2s;
+        }
+        
+        .nav-link:hover { 
+            background-color: #f8fafc; 
+            color: var(--primary-color); 
+            border-left-color: #cbd5e1;
+        }
+        
+        .nav-link.active { 
+            background-color: #eff6ff; 
+            color: var(--primary-color); 
+            border-left-color: var(--primary-color); 
+            font-weight: 600;
+        }
+
+        /* --- Main Content Styling --- */
+        .main-content {
+            margin-left: var(--sidebar-width);
+            padding: 4rem 5%;
+            max-width: 1200px;
+            transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            min-height: 100vh;
+        }
+
+        .main-content.focus-mode {
+            margin-left: 0;
+            max-width: 900px;
+            margin-right: auto;
+            margin-left: auto;
+        }
+
+        /* Typography */
+        h1 { font-size: 2.75rem; font-weight: 800; color: #0f172a; letter-spacing: -0.03em; line-height: 1.1; margin-bottom: 1.5rem; }
+        h2 { font-size: 1.8rem; font-weight: 700; color: #1e293b; margin-top: 3.5rem; margin-bottom: 1rem; padding-bottom: 0.75rem; border-bottom: 1px solid #e2e8f0; letter-spacing: -0.02em; }
+        h3 { font-size: 1.4rem; font-weight: 600; color: #334155; margin-top: 2.5rem; margin-bottom: 0.75rem; }
+        p { margin-bottom: 1.25rem; line-height: 1.75; color: #475569; font-size: 1.05rem; }
+        ul, ol { margin-bottom: 1.5rem; padding-left: 1.5rem; }
+        li { margin-bottom: 0.5rem; line-height: 1.7; color: #475569; }
+        li::marker { color: #94a3b8; }
+
+        /* Code Containers */
+        .code-wrapper {
+            background: var(--code-bg);
+            border-radius: 0.75rem;
+            overflow: hidden;
+            margin: 2rem 0;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+        
+        .code-header {
+            background: #0f172a;
+            color: #94a3b8;
+            padding: 0.75rem 1.25rem;
+            font-size: 0.8rem;
+            font-weight: 600;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #334155;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .copy-btn {
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.1);
+            color: #e2e8f0;
+            padding: 0.25rem 0.75rem;
+            border-radius: 0.375rem;
+            font-size: 0.75rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .copy-btn:hover { background: rgba(255,255,255,0.2); color: white; }
+
+        /* Explainer Boxes */
+        .explainer {
+            border-left: 4px solid #e2e8f0;
+            padding: 1.5rem;
+            background: white;
+            border-radius: 0 0.5rem 0.5rem 0;
+            margin: 2rem 0;
+        }
+        .explainer-item { margin-bottom: 1.25rem; }
+        .explainer-item:last-child { margin-bottom: 0; }
+        .explainer-title { font-family: 'JetBrains Mono', monospace; font-weight: 700; color: #0f172a; font-size: 0.95rem; margin-bottom: 0.25rem; }
+        .explainer-text { color: #64748b; font-size: 0.95rem; line-height: 1.6; }
+
+        /* Callouts */
+        .callout { padding: 1.25rem; border-radius: 0.5rem; margin: 1.5rem 0; border-left: 4px solid; }
+        .callout-info { background: #eff6ff; border-color: #3b82f6; }
+        .callout-warn { background: #fffbeb; border-color: #f59e0b; }
+        .callout-error { background: #fef2f2; border-color: #ef4444; }
+        .callout-title { display: block; font-weight: 700; margin-bottom: 0.5rem; text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.05em; }
+
+        /* Floating Toggle Button */
+        .menu-toggle {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            width: 3.5rem;
+            height: 3.5rem;
+            background: var(--primary-color);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 10px 25px -5px rgba(37, 99, 235, 0.4);
+            cursor: pointer;
+            z-index: 100;
+            transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .menu-toggle:hover { transform: scale(1.1); }
+
+        /* Tables */
+        .styled-table { width: 100%; border-collapse: collapse; margin: 2rem 0; background: white; border-radius: 0.5rem; overflow: hidden; box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1); }
+        .styled-table th { background: #f1f5f9; text-align: left; padding: 1rem; font-weight: 600; color: #475569; border-bottom: 2px solid #e2e8f0; }
+        .styled-table td { padding: 1rem; border-bottom: 1px solid #f1f5f9; color: #334155; font-size: 0.95rem; }
+        .styled-table tr:last-child td { border-bottom: none; }
+        .styled-table code { background: #f1f5f9; padding: 0.2rem 0.4rem; border-radius: 0.25rem; color: #0f172a; font-size: 0.85rem; border: 1px solid #e2e8f0; }
+
+        /* Mobile Optimization */
+        @media (max-width: 768px) {
+            .sidebar { transform: translateX(-100%); }
+            .sidebar.mobile-active { transform: translateX(0); box-shadow: 0 0 0 100vh rgba(0,0,0,0.5); }
+            .main-content { margin-left: 0; padding: 2rem 1.5rem; }
+            .main-content.focus-mode { margin-left: 0; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Sidebar Toggle Button -->
+    <button class="menu-toggle" onclick="toggleSidebar()" aria-label="Toggle Menu">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+    </button>
+
+    <!-- Navigation Sidebar -->
+    <nav class="sidebar" id="sidebar">
+        <div class="nav-header">
+            <div class="text-lg font-bold text-slate-900">Flex & Bison <span class="text-blue-600">Mastery</span></div>
+            <div class="text-xs text-slate-500 mt-1">Complete Reference & Course</div>
+        </div>
+
+        <div class="nav-group-title">1. Fundamentals</div>
+        <a href="#anatomy" class="nav-link">File Anatomy (.l vs .y)</a>
+        <a href="#whitespace" class="nav-link">The "Whitespace" Rules</a>
+        <a href="#scoping" class="nav-link">Variables & Scope</a>
+
+        <div class="nav-group-title">2. Flex (Scanner)</div>
+        <a href="#flex-regex" class="nav-link">Regex Patterns (Ref)</a>
+        <a href="#flex-vars" class="nav-link">Internal Variables</a>
+        <a href="#flex-states" class="nav-link">Start States</a>
+
+        <div class="nav-group-title">3. Bison (Parser)</div>
+        <a href="#bison-concepts" class="nav-link">Tokens vs Non-Terminals</a>
+        <a href="#bison-union" class="nav-link">The %union (Crucial)</a>
+        <a href="#bison-grammar" class="nav-link">Grammar & Precedence</a>
+
+        <div class="nav-group-title">4. Projects (Code)</div>
+        <a href="#proj-string" class="nav-link">Proj 1: String Appender</a>
+        <a href="#proj-calc" class="nav-link">Proj 2: Calculator</a>
+
+        <div class="nav-group-title">5. Execution</div>
+        <a href="#build-guide" class="nav-link">Windows Build Recipe</a>
+        <a href="#linking" class="nav-link">Linking External C Files</a>
+        <a href="#troubleshoot" class="nav-link">Troubleshooting</a>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="main-content" id="main-content">
+
+        <!-- HERO -->
+        <section class="mb-16">
+            <h1>Flex & Bison: The Manual</h1>
+            <p class="text-xl text-slate-500">A comprehensive guide to Lexical Analysis and Parsing on Windows.</p>
+            <div class="flex gap-4 mt-6">
+                <a href="#proj-string" class="bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-700 transition">Go to Projects</a>
+                <a href="#flex-regex" class="bg-white border border-slate-300 text-slate-700 px-6 py-3 rounded-lg font-semibold hover:bg-slate-50 transition">Regex Cheatsheet</a>
+            </div>
+        </section>
+
+        <hr class="border-slate-200 mb-12">
+
+        <!-- SECTION 1: FUNDAMENTALS -->
+        <section id="anatomy">
+            <h2>File Anatomy & Structure</h2>
+            <p>Flex (<code>.l</code>) and Bison (<code>.y</code>) files share a strict three-part structure. The sections are separated by the <code>%%</code> delimiter.</p>
+
+            <div class="code-wrapper">
+                <div class="code-header">Generic Structure</div>
+<pre><code class="language-c">/* SECTION 1: DEFINITIONS */
+%{
+   // C Code (Headers, Global Variables)
+   // Copied verbatim to top of output file
+%}
+   // Flex/Bison Definitions (Tokens, Patterns)
+
+%% 
+
+/* SECTION 2: RULES */
+   // The Core Logic
+   // Flex: Regex Pattern -> C Action
+   // Bison: Grammar Rule -> C Action
+
+%% 
+
+/* SECTION 3: USER CODE */
+   // Plain C Functions (main, error handlers)
+   // Copied verbatim to bottom of output file</code></pre>
+            </div>
+        </section>
+
+        <section id="whitespace">
+            <h2>The "Whitespace" Rules</h2>
+            <div class="callout callout-error">
+                <span class="callout-title">Critical Warning</span>
+                <p>Flex is extremely sensitive to whitespace in the Rules section.</p>
+            </div>
+            
+            <p>If you indent a regex pattern, Flex assumes it is raw C code and copies it to the output instead of trying to match it. This breaks your scanner.</p>
+
+            <div class="grid md:grid-cols-2 gap-6 my-6">
+                <div class="bg-red-50 border border-red-200 rounded-lg p-4">
+                    <div class="text-red-700 font-bold text-sm uppercase mb-2">❌ Wrong</div>
+                    <pre class="bg-white border border-red-100 rounded p-2 text-sm"><code class="language-c">%%
+  [0-9]  { return NUM; }
+// ^ Space here kills it</code></pre>
+                </div>
+                <div class="bg-green-50 border border-green-200 rounded-lg p-4">
+                    <div class="text-green-700 font-bold text-sm uppercase mb-2">✅ Right</div>
+                    <pre class="bg-white border border-green-100 rounded p-2 text-sm"><code class="language-c">%%
+[0-9]    { return NUM; }
+// ^ Touches margin</code></pre>
+                </div>
+            </div>
+        </section>
+
+        <section id="scoping">
+            <h2>Variables & Scope</h2>
+            <p>Understanding where variables live is crucial for sharing data between the Scanner (Flex) and the Parser (Bison).</p>
+
+            <div class="styled-table">
+                <table>
+                    <thead><tr><th>Scope Location</th><th>Lifetime</th><th>Visibility</th><th>Usage</th></tr></thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>Top (Definitions)</strong><br><code>%{ int count=0; %}</code></td>
+                            <td>Global (Persists)</td>
+                            <td>Entire File</td>
+                            <td>Line counters, global flags.</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Action Block</strong><br><code>{ int x=5; }</code></td>
+                            <td>Local (Temporary)</td>
+                            <td>Only that block</td>
+                            <td>Temporary calculations, conversions.</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Extern</strong><br><code>extern int x;</code></td>
+                            <td>Global</td>
+                            <td>Cross-File</td>
+                            <td>Sharing <code>yylineno</code> or <code>yylval</code> between Flex/Bison.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- SECTION 2: FLEX -->
+        <section id="flex-regex">
+            <h2>Flex: Regex Cheatsheet</h2>
+            <p>Use these patterns to match text in your input.</p>
+            <div class="styled-table">
+                <table>
+                    <thead><tr><th>Symbol</th><th>Meaning</th><th>Example</th></tr></thead>
+                    <tbody>
+                        <tr><td><code>.</code></td><td>Any char except newline</td><td><code>a.c</code> matches "abc", "a@c"</td></tr>
+                        <tr><td><code>[]</code></td><td>Character Class</td><td><code>[a-z]</code> (lowercase), <code>[0-9]</code> (digits)</td></tr>
+                        <tr><td><code>*</code></td><td>Zero or more</td><td><code>a*</code> matches "", "a", "aaaa"</td></tr>
+                        <tr><td><code>+</code></td><td>One or more</td><td><code>a+</code> matches "a", "aa" (NOT empty)</td></tr>
+                        <tr><td><code>?</code></td><td>Optional (0 or 1)</td><td><code>https?</code> matches "http", "https"</td></tr>
+                        <tr><td><code>^</code></td><td>Start of Line</td><td><code>^#</code> matches lines starting with #</td></tr>
+                        <tr><td><code>|</code></td><td>OR operator</td><td><code>cat|dog</code></td></tr>
+                        <tr><td><code>\</code></td><td>Escape</td><td><code>\.</code> matches a real dot</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <section id="flex-vars">
+            <h2>Flex: Internal Variables</h2>
+            <p>Flex populates these variables automatically whenever a pattern is matched.</p>
+            
+            <div class="explainer">
+                <div class="explainer-item">
+                    <div class="explainer-title">char *yytext</div>
+                    <div class="explainer-text">The actual text string that was matched. If input is "123", <code>yytext</code> is "123".</div>
+                </div>
+                <div class="explainer-item">
+                    <div class="explainer-title">int yyleng</div>
+                    <div class="explainer-text">The length of the matched string.</div>
+                </div>
+                <div class="explainer-item">
+                    <div class="explainer-title">YYSTYPE yylval</div>
+                    <div class="explainer-text"><strong>Crucial.</strong> This is the variable used to pass data to Bison. If you match a number, you must convert it and store it here.</div>
+                </div>
+                <div class="explainer-item">
+                    <div class="explainer-title">int yylineno</div>
+                    <div class="explainer-text">Current line number (must enable with <code>%option yylineno</code>).</div>
+                </div>
+            </div>
+        </section>
+
+        <section id="flex-states">
+            <h2>Start Conditions (States)</h2>
+            <p>Sometimes you need "modes". For example, inside a string <code>"..."</code>, the rules are different than outside. Flex uses <strong>Start States</strong>.</p>
+            
+            <div class="code-wrapper">
+                <div class="code-header"><span>states.l</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+<pre><code class="language-c line-numbers">%x STR_MODE
+
+%%
+\"              { BEGIN STR_MODE; }  /* Enter String Mode */
+<STR_MODE>[^\"] { printf("Content: %s\n", yytext); }
+<STR_MODE>\"    { BEGIN INITIAL; }   /* Exit String Mode */
+%%</code></pre>
+            </div>
+        </section>
+
+        <!-- SECTION 3: BISON -->
+        <section id="bison-concepts">
+            <h2>Bison: Tokens vs Non-Terminals</h2>
+            <p>Parsing builds a tree. <strong>Tokens</strong> are the leaves (from Flex). <strong>Non-Terminals</strong> are the branches (rules in Bison).</p>
+            <ul class="list-disc ml-6 space-y-2 text-slate-600">
+                <li><strong>Token:</strong> Raw data. <code>NUMBER</code>, <code>PLUS</code>, <code>IF</code>. Defined with <code>%token</code>.</li>
+                <li><strong>Non-Terminal:</strong> Grammar structure. <code>expr</code>, <code>statement</code>. Defined with <code>%type</code>.</li>
+            </ul>
+        </section>
+
+        <section id="bison-union">
+            <h2>The %union (Passing Data)</h2>
+            <div class="callout callout-info">
+                <span class="callout-title">Why we need this</span>
+                By default, Bison assumes all data is an <code>int</code>. If you want to pass a <strong>Float</strong> or a <strong>String</strong>, you must use a Union to tell Bison that variables can hold different types.
+            </div>
+
+            <div class="code-wrapper">
+                <div class="code-header"><span>Bison Declaration</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+<pre><code class="language-c line-numbers">%union {
+    int ival;    // For integers
+    float fval;  // For floats
+    char *str;   // For strings
+}
+
+// Tell Bison which token uses which type
+%token <ival> INTEGER
+%token <fval> FLOAT_NUM
+%token <str>  STRING_LITERAL</code></pre>
+            </div>
+        </section>
+
+        <section id="bison-grammar">
+            <h2>Grammar & Precedence</h2>
+            <p>Bison resolves ambiguity using precedence rules. Declare operators from <strong>Low Priority</strong> to <strong>High Priority</strong>.</p>
+            
+            <div class="code-wrapper">
+                <div class="code-header"><span>Precedence Block</span></div>
+<pre><code class="language-c">%left '+' '-'   // Lowest priority
+%left '*' '/'   // Higher priority
+%left UMINUS    // Highest priority (Unary minus)</code></pre>
+            </div>
+        </section>
+
+        <!-- SECTION 4: PROJECTS -->
+        <section id="proj-string">
+            <h2>Project 1: String Appender</h2>
+            <p><strong>Goal:</strong> Input <code>Daffodil+University</code> &rarr; Output <code>Daffodil University</code>.</p>
+            <p><strong>Key Concept:</strong> C does not handle strings automatically. We must allocate memory using <code>malloc</code>.</p>
+
+            <h3>Scanner (string.l)</h3>
+            <div class="code-wrapper">
+                <div class="code-header"><span>string.l</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+<pre><code class="language-c line-numbers">%{
+#include "string.tab.h"
+#include &lt;string.h&gt;
+%}
+
+%%
+[a-zA-Z]+ { 
+    /* 1. Allocate memory and copy the string */
+    yylval.str = strdup(yytext); 
+    return STRING; 
+}
+"+"       { return PLUS; }
+[ \t\r\n] { /* Skip whitespace */ }
+.         { return yytext[0]; }
+%%
+
+int yywrap() { return 1; }</code></pre>
+            </div>
+
+            <h3>Parser (string.y)</h3>
+            <div class="code-wrapper">
+                <div class="code-header"><span>string.y</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+<pre><code class="language-c line-numbers">%{
+#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+#include &lt;string.h&gt;
+void yyerror(char *s);
+int yylex();
+%}
+
+%union { char *str; }
+%token <str> STRING
+%token PLUS
+%type <str> expression
+
+%%
+program: expression { 
+    printf("Result: %s\n", $1); 
+    free($1); /* Always free memory */
+};
+
+expression: STRING PLUS STRING {
+    /* 1. Calculate total length needed */
+    int len = strlen($1) + strlen($3) + 2; // +1 for space, +1 for null
+    
+    /* 2. Allocate memory */
+    char *res = malloc(len);
+    
+    /* 3. Combine strings */
+    sprintf(res, "%s %s", $1, $3);
+    
+    /* 4. Pass result up */
+    $$ = res;
+};
+%%
+
+void yyerror(char *s) { fprintf(stderr, "Error: %s\n", s); }
+int main() { yyparse(); return 0; }</code></pre>
+            </div>
+        </section>
+
+        <section id="proj-calc">
+            <h2>Project 2: Calculator</h2>
+            <p><strong>Goal:</strong> Handle floating point math and operator precedence.</p>
+
+            <h3>Scanner (calc.l)</h3>
+            <div class="code-wrapper">
+                <div class="code-header"><span>calc.l</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+<pre><code class="language-c line-numbers">%{
+#include "calc.tab.h"
+#include &lt;stdlib.h&gt;
+%}
+
+%%
+/* Match integers OR floats */
+[0-9]+(\.[0-9]+)? { 
+    yylval.fval = atof(yytext); 
+    return NUMBER; 
+}
+[-+*/()] { return yytext[0]; }
+[ \t\r\n] { }
+.        { }
+%%
+
+int yywrap() { return 1; }</code></pre>
+            </div>
+
+            <h3>Parser (calc.y)</h3>
+            <div class="code-wrapper">
+                <div class="code-header"><span>calc.y</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+<pre><code class="language-c line-numbers">%{
+#include &lt;stdio.h&gt;
+void yyerror(char *s);
+int yylex();
+%}
+
+%union { float fval; }
+%token <fval> NUMBER
+%type <fval> expr
+
+/* Precedence: Lower in list = Higher Priority */
+%left '+' '-'
+%left '*' '/'
+
+%%
+program: expr { printf("Result: %.2f\n", $1); };
+
+expr: NUMBER        { $$ = $1; }
+    | expr '+' expr { $$ = $1 + $3; }
+    | expr '-' expr { $$ = $1 - $3; }
+    | expr '*' expr { $$ = $1 * $3; }
+    | expr '/' expr { $$ = $1 / $3; }
+    | '(' expr ')'  { $$ = $2; }
+    ;
+%%
+
+void yyerror(char *s) { fprintf(stderr, "Error: %s\n", s); }
+int main() { yyparse(); return 0; }</code></pre>
+            </div>
+        </section>
+
+        <!-- SECTION 5: EXECUTION -->
+        <section id="build-guide">
+            <h2>Windows Build Recipe</h2>
+            <p>Use these exact commands in your terminal.</p>
+            <div class="code-wrapper">
+                <div class="code-header"><span>Terminal</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+<pre><code class="language-bash"># 1. Generate Scanner
+flex filename.l
+
+# 2. Generate Parser
+bison -d filename.y
+
+# 3. Compile
+gcc lex.yy.c filename.tab.c -o app.exe
+
+# 4. Run
+app.exe</code></pre>
+            </div>
+            <div class="callout callout-warn">
+                <span class="callout-title">EOF Trick</span>
+                On Windows CMD, the program will wait for input forever. To finish input, press <strong>Ctrl+Z</strong> then <strong>Enter</strong>.
+            </div>
+        </section>
+
+        <section id="linking">
+            <h2>Linking External C Files</h2>
+            <p>If you separate logic into <code>helper.c</code>, you must include it in the GCC command.</p>
+            <div class="code-wrapper">
+                <div class="code-header"><span>Compile Command</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+<pre><code class="language-bash">gcc lex.yy.c parser.tab.c helper.c -o app.exe</code></pre>
+            </div>
+        </section>
+
+        <section id="troubleshoot">
+            <h2>Troubleshooting</h2>
+            <div class="explainer">
+                <div class="explainer-item">
+                    <div class="explainer-title">Error: syntax error</div>
+                    <div class="explainer-text">Usually caused by Windows newlines (<code>\r\n</code>). Ensure your regex handles <code>\r</code>. Use <code>[ \t\r\n]</code> to skip whitespace.</div>
+                </div>
+                <div class="explainer-item">
+                    <div class="explainer-title">Error: undefined reference to `yylex`</div>
+                    <div class="explainer-text">You forgot to compile <code>lex.yy.c</code>. Check your gcc command.</div>
+                </div>
+                <div class="explainer-item">
+                    <div class="explainer-title">Error: conflicting types for `yylval`</div>
+                    <div class="explainer-text">You defined <code>YYSTYPE</code> manually but also used <code>%union</code>. Use <code>%union</code> only.</div>
+                </div>
+            </div>
+        </section>
+
+        <footer class="mt-16 pt-8 border-t border-slate-200 text-center text-slate-500 text-sm">
+            <p>Generated by Gemini | Ultimate Reference Guide</p>
+        </footer>
+
+    </main>
+
+    <script>
+        // Sidebar Logic
+        const sidebar = document.getElementById('sidebar');
+        const mainContent = document.getElementById('main-content');
+        let isSidebarOpen = true; // Default Desktop state
+
+        function toggleSidebar() {
+            const isMobile = window.innerWidth <= 768;
+            
+            if (isMobile) {
+                // Mobile Logic: Slide in/out
+                sidebar.classList.toggle('closed'); // Toggle class isn't enough for mobile override, handling via explicit logic below might be better but 'closed' class works if CSS is right.
+                // Actually, for mobile, let's use a specific class
+                sidebar.classList.toggle('mobile-active');
+            } else {
+                // Desktop Logic: Push content
+                if (isSidebarOpen) {
+                    sidebar.classList.add('closed');
+                    mainContent.classList.add('focus-mode');
+                } else {
+                    sidebar.classList.remove('closed');
+                    mainContent.classList.remove('focus-mode');
+                }
+                isSidebarOpen = !isSidebarOpen;
+            }
+        }
+
+        // Handle Resize
+        window.addEventListener('resize', () => {
+            if (window.innerWidth <= 768) {
+                sidebar.classList.add('closed'); // Default closed on mobile
+                mainContent.classList.remove('focus-mode');
+                sidebar.classList.remove('mobile-active');
+            } else {
+                sidebar.classList.remove('closed'); // Default open on desktop
+                mainContent.classList.remove('focus-mode');
+                isSidebarOpen = true;
+            }
+        });
+
+        // Init
+        if (window.innerWidth <= 768) {
+            sidebar.classList.add('closed');
+        }
+
+        // Copy Function
+        function copyCode(btn) {
+            const codeElement = btn.closest('.code-wrapper').querySelector('code');
+            if (codeElement) {
+                const code = codeElement.innerText;
+                // Create textarea fallback
+                const textArea = document.createElement("textarea");
+                textArea.value = code;
+                document.body.appendChild(textArea);
+                textArea.select();
+                try {
+                    document.execCommand('copy');
+                    const originalText = btn.innerText;
+                    btn.innerText = "Copied!";
+                    setTimeout(() => btn.innerText = originalText, 2000);
+                } catch (err) {
+                    console.error('Fallback copy failed', err);
+                }
+                document.body.removeChild(textArea);
+            }
+        }
+
+        // Scroll Spy
+        const sections = document.querySelectorAll('section');
+        const navLinks = document.querySelectorAll('.nav-link');
+
+        window.addEventListener('scroll', () => {
+            let current = '';
+            sections.forEach(section => {
+                const sectionTop = section.offsetTop;
+                if (pageYOffset >= sectionTop - 150) {
+                    current = section.getAttribute('id');
+                }
+            });
+
+            navLinks.forEach(link => {
+                link.classList.remove('active');
+                if (link.getAttribute('href').includes(current)) {
+                    link.classList.add('active');
+                }
+            });
+        });
+    </script>
+</body>
+</html>
